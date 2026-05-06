@@ -13,8 +13,7 @@ export default function Home() {
     if (!caseId.trim()) return;
     setIsLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}/api/scan/${caseId}`);
+      const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001' + '/api/scan/' + caseId);
       if (res.ok) setShowReport(true);
     } catch {
       console.error('Erreur chargement scan');
@@ -25,9 +24,7 @@ export default function Home() {
 
   const startInspection = async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}/api/create-checkout`,
-        { method: 'POST' });
+      const res = await fetch((process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001') + '/api/create-checkout', { method: 'POST' });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
     } catch {
@@ -55,32 +52,20 @@ export default function Home() {
             <button
               type="submit"
               disabled={isLoading || !caseId.trim()}
-              style={{
-                background: '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 24px',
-                fontSize: '16px',
-                cursor: isLoading ? 'wait' : 'pointer',
-                opacity: isLoading ? 0.7 : 1,
-              }}
+              style={{ background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', cursor: isLoading ? 'wait' : 'pointer', opacity: isLoading ? 0.7 : 1 }}
             >
               {isLoading ? 'Chargement...' : 'Voir le rapport'}
             </button>
           </form>
           <div style={{ margin: '24px 0', borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
             <h3 style={{ marginBottom: '12px' }}>Ou demarrer une inspection</h3>
-            <button
-              onClick={startInspection}
-              style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', cursor: 'pointer', width: '100%' }}
-            >
+            <button onClick={startInspection} style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', cursor: 'pointer', width: '100%' }}>
               Acheter un scan - 29,99 EUR
             </button>
           </div>
-                  <div style={{ marginTop: '24px', borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
-          <a href="/admin" style={{ display: 'inline-block', background: '#6b7280', color: 'white', textDecoration: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '14px', cursor: 'pointer' }}>Demo Admin - Parametres</a>
-        </div>
+          <div style={{ marginTop: '24px', borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
+            <a href="/autocheck/admin/" style={{ display: 'inline-block', background: '#6b7280', color: 'white', textDecoration: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '14px', cursor: 'pointer' }}>Demo Admin - Parametres</a>
+          </div>
         </section>
       ) : (
         <DamageReport caseId={caseId} />
