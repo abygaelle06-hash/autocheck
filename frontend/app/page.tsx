@@ -8,15 +8,13 @@ export default function Home() {
   const [showReport, setShowReport] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!caseId.trim()) return;
-
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}/api/scan/${caseId}`
-      );
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}/api/scan/${caseId}`);
       if (res.ok) setShowReport(true);
     } catch {
       console.error('Erreur chargement scan');
@@ -29,8 +27,7 @@ export default function Home() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'}/api/create-checkout`,
-        { method: 'POST' }
-      );
+        { method: 'POST' });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
     } catch {
@@ -44,7 +41,6 @@ export default function Home() {
         <h1 style={{ color: '#1e40af', marginBottom: '8px' }}>AutoCheck</h1>
         <p style={{ color: '#64748b' }}>Inspection automobile intelligente</p>
       </header>
-
       {!showReport ? (
         <section style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <h2 style={{ marginBottom: '16px' }}>Nouvelle inspection</h2>
@@ -73,21 +69,11 @@ export default function Home() {
               {isLoading ? 'Chargement...' : 'Voir le rapport'}
             </button>
           </form>
-
           <div style={{ margin: '24px 0', borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
             <h3 style={{ marginBottom: '12px' }}>Ou demarrer une inspection</h3>
             <button
               onClick={startInspection}
-              style={{
-                background: '#059669',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 24px',
-                fontSize: '16px',
-                cursor: 'pointer',
-                width: '100%',
-              }}
+              style={{ background: '#059669', color: 'white', border: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '16px', cursor: 'pointer', width: '100%' }}
             >
               Acheter un scan - 29,99 EUR
             </button>
