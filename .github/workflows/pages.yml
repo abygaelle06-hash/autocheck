@@ -2,7 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -28,14 +29,14 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-            run: npm install
+        run: npm install
 
       - name: Build
         working-directory: frontend
         env:
-          NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co'
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: 'placeholder-key'
-          NEXT_PUBLIC_BACKEND_URL: 'https://placeholder.railway.app'
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key
+          NEXT_PUBLIC_BACKEND_URL: https://placeholder.railway.app
         run: npm run build
 
       - name: Upload artifact
