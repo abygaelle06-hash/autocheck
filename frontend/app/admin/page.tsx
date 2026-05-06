@@ -47,7 +47,7 @@ export default function AdminDashboard() {
           <h1 style={{ color: '#1e40af', margin: '0 0 8px 0' }}>Dashboard Admin - AutoCheck</h1>
           <p style={{ color: '#64748b', margin: 0 }}>Gerer les parametres, marges et cles API</p>
         </div>
-        <a href="/autocheck/" style={{ background: '#2563eb', color: 'white', textDecoration: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px' }}>Retour accueil</a>
+        <a href="/" style={{ background: '#2563eb', color: 'white', textDecoration: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px' }}>Retour accueil</a>
       </header>
       <section style={{ background: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
         <h2 style={{ marginBottom: '16px', color: '#1e293b' }}>Parametres globaux</h2>
