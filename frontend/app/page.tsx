@@ -78,6 +78,9 @@ export default function Home() {
               Acheter un scan - 29,99 EUR
             </button>
           </div>
+                  <div style={{ marginTop: '24px', borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
+          <a href="/admin" style={{ display: 'inline-block', background: '#6b7280', color: 'white', textDecoration: 'none', borderRadius: '8px', padding: '12px 24px', fontSize: '14px', cursor: 'pointer' }}>Demo Admin - Parametres</a>
+        </div>
         </section>
       ) : (
         <DamageReport caseId={caseId} />
