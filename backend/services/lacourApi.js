@@ -22,7 +22,7 @@ async function getPartPrice(partId) {
         }
       }
     );
-    return response.data.price || response.data EstimatedPrice;
+    return response.data.price || response.data.EstimatedPrice;
   } catch (error) {
     console.error(`Erreur appel Lacour API pour la piece ${partId}:`, error.message);
     // Retourne un prix par defaut en cas d'erreur
