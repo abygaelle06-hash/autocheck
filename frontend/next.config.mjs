@@ -2,10 +2,10 @@ const nextConfig = {
   output: 'export',
   distDir: 'out',
   trailingSlash: true,
+  basePath: '/autocheck',
   images: {
     unoptimized: true
-  },,
-  basePath: '/autocheck'
+  },
   typescript: {
     ignoreBuildErrors: true
   },
