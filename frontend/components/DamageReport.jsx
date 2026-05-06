@@ -1,196 +1,496 @@
 // frontend/components/DamageReport.jsx
-// Composant React pour le rapport de dommages
+// Rapport de dommages - version corrigee avec UI moderne
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useState } from 'react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const colors = {
+  primary: '#2563eb',
+  accent: '#0ea5e9',
+  bg: '#f8fafc',
+  bgCard: '#ffffff',
+  text: '#0f172a',
+  textMuted: '#64748b',
+  border: '#e2e8f0',
+  success: '#16a34a',
+  warning: '#f59e0b',
+  error: '#dc2626',
+  light: '#e0f2fe',
+  moderate: '#fef3c7',
+  severe: '#fee2e2',
+};
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export default function DamageReport({ caseId, scanData }) {
+  const [selectedDamage, setSelectedDamage] = useState(null);
 
-/**
- * Composant rapport de dommages
- * @param {string} caseId - Reference du scan Cardeen
- */
-export default function DamageReport({ caseId }) {
-  const [scan, setScan] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchScan() {
-      const { data, error } = await supabase
-        .from('scans')
-        .select('*')
-        .eq('case_id', caseId)
-        .single();
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setScan(data);
-      }
-      setLoading(false);
-    }
-    fetchScan();
-  }, [caseId]);
-
-  if (loading) {
-    return <div className="loading">Chargement du rapport...</div>;
+  if (!scanData) {
+    return (
+      <div style={styles.empty}>
+        <p>Aucune donnee disponible</p>
+      </div>
+    );
   }
 
-  if (error) {
-    return <div className="error">Erreur: {error}</div>;
-  }
-
-  if (!scan) {
-    return <div className="empty">Aucun rapport trouve.</div>;
-  }
-
-  const { vehicle_data, damage_report, lacour_enriched } = scan;
+  const { status, vehicle_data = {}, damage_report = {}, lacour_enriched, created_at } = scanData;
+  const damages = damage_report.damages || [];
 
   return (
-    <div className="damage-report">
-      {/* En-tete vehicule */}
-      <header className="vehicle-header">
-        <h2>Rapport d\'inspection</h2>
-        <p>Status: {scan.status}</p>
-        <p>Reference: {scan.case_id}</p>
-        {vehicle_data.make && (
+    <div style={styles.container}>
+      {/* Header card */}
+      <div style={styles.headerCard}>
+        <div style={styles.headerTop}>
           <div>
-            <p>{vehicle_data.make} {vehicle_data.model} {vehicle_data.year}</p>
-            <p>VIN: {vehicle_data.vin}</p>
+            <div style={styles.badge}>{statusText(status)}</div>
+            <h1 style={styles.title}>Rapport d'inspection</h1>
+            <p style={styles.subtitle}>Reference: <strong>{caseId}</strong></p>
+          </div>
+          <div style={styles.dateBlock}>
+            <span style={styles.dateLabel}>Date</span>
+            <span style={styles.dateValue}>{formatDate(created_at)}</span>
+          </div>
+        </div>
+
+        {vehicle_data.make && (
+          <div style={styles.vehicleInfo}>
+            <div style={styles.vehicleIcon}>🚗</div>
+            <div style={styles.vehicleDetails}>
+              <div style={styles.vehicleName}>
+                {vehicle_data.make} {vehicle_data.model} {vehicle_data.year}
+              </div>
+              {vehicle_data.vin && (
+                <div style={styles.vin}>VIN: {vehicle_data.vin}</div>
+              )}
+            </div>
           </div>
         )}
-      </header>
+      </div>
 
-      {/* Perte de valeur estimee */}
-      <section className="value-loss">
-        <h3>Perte de valeur estimee</h3>
-        <p className="value-amount">
-          {damage_report.estimated_value_loss
-            ? `${damage_report.estimated_value_loss} EUR`
-            : 'Non disponible'}
-        </p>
-      </section>
+      {/* Stats grid */}
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <div style={styles.statIcon}>🔧</div>
+          <div style={styles.statValue}>{damages.length}</div>
+          <div style={styles.statLabel}>Dommage(s) detecte(s)</div>
+        </div>
 
-      {/* Visualisation vehicule SVG */}
-      <section className="vehicle-preview">
-        <h3>Etat du vehicule</h3>
-        <VehicleSVG damages={damage_report.damages || []} />
-      </section>
+        <div style={{...styles.statCard, background: colors.light, borderColor: colors.accent}}>
+          <div style={styles.statIcon}>💰</div>
+          <div style={styles.statValue}>
+            {damage_report.estimated_value_loss || 'N/A'}
+          </div>
+          <div style={styles.statLabel}>Perte de valeur estimee (EUR)</div>
+        </div>
 
-      {/* Liste des dommages */}
-      <section className="damages-list">
-        <h3>Dommages detectes</h3>
-        {(damage_report.damages || []).length === 0 ? (
-          <p>Aucun dommage detecte.</p>
+        <div style={styles.statCard}>
+          <div style={styles.statIcon}>{lacour_enriched ? '✅' : '⏳'}</div>
+          <div style={styles.statValue}>{lacour_enriched ? 'Oui' : 'Non'}</div>
+          <div style={styles.statLabel}>Prix Lacour enrichis</div>
+        </div>
+      </div>
+
+      {/* Damages list */}
+      <div style={styles.damagesSection}>
+        <h2 style={styles.sectionTitle}>
+          📄 Dommages detectes ({damages.length})
+        </h2>
+
+        {damages.length === 0 ? (
+          <div style={styles.noDamages}>
+            <span style={{ fontSize: '2rem' }}>✅</span>
+            <p>Aucun dommage detecte. Le vehicule est en bon etat.</p>
+          </div>
         ) : (
-          <ul>
-            {(damage_report.damages || []).map((damage, idx) => (
-              <DamageItem key={idx} damage={damage} enriched={lacour_enriched} />
+          <div style={styles.damagesList}>
+            {damages.map((damage, idx) => (
+              <DamageCard
+                key={idx}
+                damage={damage}
+                index={idx}
+                enriched={lacour_enriched}
+                onClick={() => setSelectedDamage(damage)}
+              />
             ))}
-          </ul>
+          </div>
         )}
-      </section>
-    </div>
-  );
-}
+      </div>
 
-/**
- * Composant item dommage
- */
-function DamageItem({ damage, enriched }) {
-  const severityColors = {
-    light: '#28a745',
-    moderate: '#ffc107',
-    severe: '#dc3545'
-  };
-
-  return (
-    <li className={`damage-item damage-${damage.severity}`}>
-      <span className="severity-badge"
-            style={{ backgroundColor: severityColors[damage.severity] || '#6c757d' }}>
-        {damage.severity || 'unknown'}
-      </span>
-      <span className="part-name">{damage.partName || damage.partId}</span>
-      <span className="zone">{damage.zone || 'N/A'}</span>
-      {enriched && damage.estimatedPrice && (
-        <span className="lacour-price">Prix: {damage.estimatedPrice} EUR</span>
+      {/* Modal detail */}
+      {selectedDamage && (
+        <DamageModal
+          damage={selectedDamage}
+          onClose={() => setSelectedDamage(null)}
+        />
       )}
-    </li>
-  );
-}
-
-/**
- * Composant SVG vehicule avec points cliquables
- */
-function VehicleSVG({ damages }) {
-  // Points cliquables bases sur les zones de dommages
-  const damageZones = damages.map(d => d.zone);
-
-  return (
-    <div className="vehicle-svg-container">
-      <svg width="300" height="150" viewBox="0 0 300 150">
-        {/*轮廓 vehicule */}
-        <rect x="20" y="50" width="260" height="70" rx="10" fill="#e0e0e0" stroke="#333" />
-        <rect x="60" y="20" width="180" height="40" rx="5" fill="#e0e0e0" stroke="#333" />
-        {/* Roues */}
-        <circle cx="55" cy="120" r="20" fill="#333" />
-        <circle cx="245" cy="120" r="20" fill="#333" />
-        {/* Points dommages */}
-        {damageZones.includes('FRONT') && (
-          <circle cx="280" cy="85" r="8" fill="#dc3545" className="damage-point" />
-        )}
-        {damageZones.includes('REAR') && (
-          <circle cx="20" cy="85" r="8" fill="#dc3545" className="damage-point" />
-        )}
-        {damageZones.includes('LEFT') && (
-          <circle cx="100" cy="120" r="8" fill="#ffc107" className="damage-point" />
-        )}
-        {damageZones.includes('RIGHT') && (
-          <circle cx="200" cy="120" r="8" fill="#ffc107" className="damage-point" />
-        )}
-        {damageZones.includes('ROOF') && (
-          <circle cx="150" cy="20" r="8" fill="#28a745" className="damage-point" />
-        )}
-      </svg>
-      <p className="svg-note">Cliquez sur un point pour voir le dommage</p>
     </div>
   );
 }
 
-// --- Styles CSS-inline ---
-const styles = `
-.damage-report { padding: 20px; font-family: sans-serif; }
-.vehicle-header { border-bottom: 1px solid #e0e0e0; margin-bottom: 20px; }
-.value-loss { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; }
-.value-amount { font-size: 24px; font-weight: bold; color: #dc3545; }
-.damages-list ul { list-style: none; padding: 0; }
-.damage-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-bottom: 1px solid #e0e0e0;
-}
-.severity-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  color: white;
-  text-transform: uppercase;
-}
-.lacour-price { color: #28a745; font-weight: bold; margin-left: auto; }
-.vehicle-svg-container { text-align: center; margin: 20px 0; }
-.svg-note { font-size: 12px; color: #6c757d; margin-top: 8px; }
-.loading, .error, .empty { text-align: center; padding: 40px; }
-.error { color: #dc3545; }
-`;
+function DamageCard({ damage, index, enriched, onClick }) {
+  const severity = damage.severity || 'unknown';
+  const severityColor = {
+    light: colors.success,
+    moderate: colors.warning,
+    severe: colors.error,
+    unknown: colors.textMuted
+  }[severity.toLowerCase()] || colors.textMuted;
 
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style');
-  styleSheet.textContent = styles;
-  document.head.appendChild(styleSheet);
+  const severityBg = {
+    light: colors.light,
+    moderate: colors.moderate,
+    severe: colors.severe,
+    unknown: '#f1f5f9'
+  }[severity.toLowerCase()] || '#f1f5f9';
+
+  return (
+    <div style={styles.damageCard} onClick={onClick}>
+      <div style={styles.damageHeader}>
+        <div style={{...styles.severityBadge, background: severityBg, color: severityColor}}>
+          {severity.toUpperCase()}
+        </div>
+        <div style={styles.damageIndex}>#{index + 1}</div>
+      </div>
+
+      <div style={styles.damageBody}>
+        <div style={styles.damageTitle}>
+          {damage.partName || damage.partId || 'Piece non identifiee'}
+        </div>
+        <div style={styles.damageZone}>
+          📍 Zone: <strong>{damage.zone || 'Non specifiee'}</strong>
+        </div>
+      </div>
+
+      {enriched && damage.estimatedPrice && (
+        <div style={styles.damageFooter}>
+          <div style={styles.priceTag}>
+            💵 {damage.estimatedPrice} EUR
+          </div>
+          {damage.availability && (
+            <div style={styles.availability}>
+              {damage.availability.available ? '✅ Disponible' : '❌ Indisponible'}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
+
+function DamageModal({ damage, onClose }) {
+  return (
+    <div style={styles.modalOverlay} onClick={onClose}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.modalHeader}>
+          <h3 style={styles.modalTitle}>Detail du dommage</h3>
+          <button style={styles.closeBtn} onClick={onClose}>×</button>
+        </div>
+        <div style={styles.modalBody}>
+          <div style={styles.modalRow}>
+            <span style={styles.modalLabel}>Piece:</span>
+            <span style={styles.modalValue}>{damage.partName || damage.partId || 'N/A'}</span>
+          </div>
+          <div style={styles.modalRow}>
+            <span style={styles.modalLabel}>Zone:</span>
+            <span style={styles.modalValue}>{damage.zone || 'N/A'}</span>
+          </div>
+          <div style={styles.modalRow}>
+            <span style={styles.modalLabel}>Severite:</span>
+            <span style={styles.modalValue}>{damage.severity || 'unknown'}</span>
+          </div>
+          {damage.estimatedPrice && (
+            <div style={styles.modalRow}>
+              <span style={styles.modalLabel}>Prix estime:</span>
+              <span style={styles.modalValue}>{damage.estimatedPrice} EUR</span>
+            </div>
+          )}
+          {damage.availability && (
+            <div style={styles.modalRow}>
+              <span style={styles.modalLabel}>Disponibilite:</span>
+              <span style={styles.modalValue}>
+                {damage.availability.available ? 'En stock' : 'Sur commande'}
+                {damage.availability.deliveryDays && ` (${damage.availability.deliveryDays} jours)`}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function statusText(status) {
+  const map = {
+    PENDING: '⏳ En attente',
+    PROCESSING: '🔄 En cours',
+    FINISHED: '✅ Termine',
+    ERROR: '❌ Erreur'
+  };
+  return map[status] || status;
+}
+
+function formatDate(isoString) {
+  if (!isoString) return 'N/A';
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  } catch {
+    return 'N/A';
+  }
+}
+
+const styles = {
+  container: {
+    marginTop: '2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
+  },
+  headerCard: {
+    background: colors.bgCard,
+    borderRadius: '16px',
+    padding: '2rem',
+    border: `1px solid ${colors.border}`,
+    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+  },
+  headerTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
+  badge: {
+    display: 'inline-block',
+    padding: '0.25rem 0.75rem',
+    borderRadius: '999px',
+    fontSize: '0.8rem',
+    fontWeight: 600,
+    background: colors.light,
+    color: colors.accent,
+    marginBottom: '0.5rem',
+  },
+  title: {
+    fontSize: '1.75rem',
+    fontWeight: 700,
+    color: colors.text,
+    marginBottom: '0.25rem',
+  },
+  subtitle: {
+    color: colors.textMuted,
+    fontSize: '0.95rem',
+  },
+  dateBlock: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '0.25rem',
+  },
+  dateLabel: {
+    fontSize: '0.75rem',
+    textTransform: 'uppercase',
+    color: colors.textMuted,
+    letterSpacing: '0.05em',
+  },
+  dateValue: {
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    color: colors.text,
+  },
+  vehicleInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    padding: '1rem',
+    background: colors.bg,
+    borderRadius: '12px',
+    marginTop: '1rem',
+  },
+  vehicleIcon: {
+    fontSize: '2rem',
+  },
+  vehicleDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+  },
+  vehicleName: {
+    fontSize: '1.1rem',
+    fontWeight: 600,
+    color: colors.text,
+  },
+  vin: {
+    fontSize: '0.85rem',
+    color: colors.textMuted,
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '1rem',
+  },
+  statCard: {
+    background: colors.bgCard,
+    padding: '1.5rem',
+    borderRadius: '12px',
+    border: `1px solid ${colors.border}`,
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  statIcon: {
+    fontSize: '1.75rem',
+  },
+  statValue: {
+    fontSize: '1.5rem',
+    fontWeight: 700,
+    color: colors.text,
+  },
+  statLabel: {
+    fontSize: '0.85rem',
+    color: colors.textMuted,
+  },
+  damagesSection: {
+    background: colors.bgCard,
+    borderRadius: '16px',
+    padding: '2rem',
+    border: `1px solid ${colors.border}`,
+    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+  },
+  sectionTitle: {
+    fontSize: '1.4rem',
+    fontWeight: 700,
+    marginBottom: '1.5rem',
+    color: colors.text,
+  },
+  noDamages: {
+    textAlign: 'center',
+    padding: '3rem 1rem',
+    color: colors.textMuted,
+  },
+  damagesList: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: '1rem',
+  },
+  damageCard: {
+    background: colors.bg,
+    border: `1px solid ${colors.border}`,
+    borderRadius: '12px',
+    padding: '1.25rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  damageHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.75rem',
+  },
+  severityBadge: {
+    padding: '0.25rem 0.625rem',
+    borderRadius: '6px',
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    letterSpacing: '0.03em',
+  },
+  damageIndex: {
+    fontSize: '0.8rem',
+    color: colors.textMuted,
+    fontWeight: 600,
+  },
+  damageBody: {
+    marginBottom: '0.75rem',
+  },
+  damageTitle: {
+    fontSize: '1.05rem',
+    fontWeight: 600,
+    color: colors.text,
+    marginBottom: '0.375rem',
+  },
+  damageZone: {
+    fontSize: '0.85rem',
+    color: colors.textMuted,
+  },
+  damageFooter: {
+    paddingTop: '0.75rem',
+    borderTop: `1px solid ${colors.border}`,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '0.5rem',
+    flexWrap: 'wrap',
+  },
+  priceTag: {
+    fontSize: '0.95rem',
+    fontWeight: 700,
+    color: colors.success,
+  },
+  availability: {
+    fontSize: '0.8rem',
+    color: colors.textMuted,
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '1rem',
+  },
+  modal: {
+    background: colors.bgCard,
+    borderRadius: '16px',
+    maxWidth: '500px',
+    width: '100%',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1.5rem',
+    borderBottom: `1px solid ${colors.border}`,
+  },
+  modalTitle: {
+    fontSize: '1.2rem',
+    fontWeight: 700,
+    color: colors.text,
+  },
+  closeBtn: {
+    fontSize: '1.75rem',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    color: colors.textMuted,
+    lineHeight: 1,
+    padding: '0.25rem',
+  },
+  modalBody: {
+    padding: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  modalRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '1rem',
+  },
+  modalLabel: {
+    fontWeight: 600,
+    color: colors.textMuted,
+    fontSize: '0.9rem',
+  },
+  modalValue: {
+    textAlign: 'right',
+    color: colors.text,
+    fontSize: '0.95rem',
+  },
+  empty: {
+    textAlign: 'center',
+    padding: '3rem 1rem',
+    color: colors.textMuted,
+  },
+};
